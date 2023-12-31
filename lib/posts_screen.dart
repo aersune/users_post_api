@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:users_api/models/posts_model.dart';
@@ -19,7 +18,7 @@ class _PostsScreenState extends State<PostsScreen> {
   void getPostsFromApi() async {
     PostsApi.getPosts().then((response) {
       setState(() {
-        Iterable list = json.decode(response.body);
+        Iterable list = json.decode(response.body) ;
         postsList = list.map((model) => Post.fromJson(model)).toList();
       });
     });
@@ -31,8 +30,6 @@ class _PostsScreenState extends State<PostsScreen> {
     super.initState();
     getPostsFromApi();
   }
-
-
 
 
   @override

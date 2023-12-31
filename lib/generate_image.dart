@@ -1,10 +1,9 @@
-import 'dart:convert';
 import 'dart:math';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:users_api/models/images_model.dart';
-import 'package:http/http.dart' as http;
 
 class ImageGenerator extends StatefulWidget {
   const ImageGenerator({Key? key}) : super(key: key);
@@ -14,73 +13,112 @@ class ImageGenerator extends StatefulWidget {
 }
 
 class _ImageGeneratorState extends State<ImageGenerator> {
-
-
   TextEditingController controller = TextEditingController();
   var searchResult = '';
-  var searchNumb = Random().nextInt(10);
-
-
+  var searchNumb = Random().nextInt(5);
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
     return GestureDetector(
-        onTap: () => FocusScope.of(context).unfocus(),
+      onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
-        appBar: AppBar(title: const Text('City'), backgroundColor: Colors.transparent,elevation: 0,),
-extendBody: false,
+          appBar: AppBar(
+            title: const Text('Weather app'),
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            centerTitle: true,
+          ),
+          extendBody: false,
+          resizeToAvoidBottomInset: false,
+          body: Stack(
+            children: [
+              FutureBuilder<YandexImage>(
+                  future: getImages(
+                    searchResult.isNotEmpty ? searchResult : 'New york',
+                  ),
+                  builder: (context, snapshot) {
+                    if (snapshot.hasError) {
+                      return Center(
+                        child: Text(snapshot.error.toString()),
+                      );
+                    } else if (snapshot.hasData) {
+                      return AnimatedContainer(
+                        duration: const Duration(milliseconds: 500),
+                        width: MediaQuery.of(context).size.width,
+                        height: MediaQuery.of(context).size.height * .5,
+                        child: CachedNetworkImage(imageUrl: snapshot.data!.imagesResults![searchNumb].original.toString(),
+                          imageBuilder: (context, imageProvider) => Container(
+                            decoration: BoxDecoration(
+                              image: DecorationImage(
+                                  image: imageProvider,
+                                  fit: BoxFit.cover,
+                                 ),
+                            ),
+                          ),
+                          placeholder: (context, url) =>  AnimatedContainer(
+                            duration: const Duration(milliseconds: 400),
+                            width: MediaQuery.of(context).size.width,
+                            height: MediaQuery.of(context).size.height,
+                            decoration: const BoxDecoration(
 
-        resizeToAvoidBottomInset: false,
-        body:  Stack(
-          children: [
-            FutureBuilder<YandexImage>(
-                future: getImages(searchResult.isNotEmpty? searchResult : 'New york'),
-                builder: (context, snapshot) {
-                  if (snapshot.hasError) {
-                    return  Center(
-                      child: Text(snapshot.error.toString()),
+                              image: DecorationImage(
+                                image: AssetImage('assets/cloud.gif'),
+                                opacity: 0.5,
+                                fit: BoxFit.cover,
+
+                              )
+                            ),
+                          ),
+                          errorWidget: (context, url, error) => const Icon(Icons.error),
+                        ),
+                      );
+                    }
+                    return const Center(
+                      child: CupertinoActivityIndicator(),
                     );
-                  } else if (snapshot.hasData) {
-                    return Container(
-                      width: MediaQuery.of(context).size.width,
-                      height: MediaQuery.of(context).size.height * .6,
-                      decoration: BoxDecoration(
-                        image: DecorationImage(image: NetworkImage(snapshot.data!.imagesResults![searchNumb].thumbnail.toString() ?? '',),fit: BoxFit.cover)
+                  }),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                child: TextField(
+                  textAlign: TextAlign.center,
+                  controller: controller,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  textAlignVertical: TextAlignVertical.top,
+                  decoration: InputDecoration(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
+                    filled: true,
+                    fillColor: Colors.black26,
+                    isDense: true,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
+                    suffix: IconButton(
+                      onPressed: () {
+                        setState(() {
+                          if (controller.text == searchResult) {
+                            searchNumb = Random().nextInt(10);
+                            FocusScope.of(context).unfocus();
+                          } else if (controller.text.isNotEmpty) {
+                            searchResult = controller.text;
+                            FocusScope.of(context).unfocus();
+                          } else {
+                            null;
+                          }
+                        });
+                      },
+                      icon: const Icon(
+                        Icons.search,
+                        color: Colors.white,
                       ),
-                    );
-                  }
-                  return const Center(
-                    child: CupertinoActivityIndicator(),
-                  );
-                }),
-            Container(
-              height: 50,
-              margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
-              child: TextFormField(
-                controller: controller,
-                decoration: InputDecoration(
-                  label: const Text('Enter city'),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                  suffix:  IconButton(onPressed: (){
-                    setState(() {
-                      if(controller.text == searchResult ){
-                        searchNumb = Random().nextInt(10);
-                      }
-                      else  if(controller.text.isNotEmpty){
-                        searchResult = controller.text;
-                      }
-                      else{
-                        null;
-                      }
-                    });
-                  }, icon: const Icon(Icons.search),),
-
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ],
-        )
-      ),
+            ],
+          )),
     );
   }
 }
